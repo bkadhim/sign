@@ -259,6 +259,24 @@ namespace Sign.Cli {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to When specifying --manifest-only, a single input manifest file is expected.
+        /// </summary>
+        internal static string ManifestOnlyMultipleFiles {
+            get {
+                return ResourceManager.GetString("ManifestOnlyMultipleFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sign just a single ClickOnce manifest file.
+        /// </summary>
+        internal static string ManifestOnlyOptionDescription {
+            get {
+                return ResourceManager.GetString("ManifestOnlyOptionDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Maximum concurrency..
         /// </summary>
         internal static string MaxConcurrencyOptionDescription {

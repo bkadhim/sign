@@ -39,7 +39,8 @@ namespace Sign.Core
             Uri timestampUrl,
             int maxConcurrency,
             HashAlgorithmName fileHashAlgorithm,
-            HashAlgorithmName timestampHashAlgorithm)
+            HashAlgorithmName timestampHashAlgorithm,
+            bool manifestOnly)
         {
             IAggregatingDataFormatSigner signer = _serviceProvider.GetRequiredService<IAggregatingDataFormatSigner>();
             IDirectoryService directoryService = _serviceProvider.GetRequiredService<IDirectoryService>();
@@ -70,7 +71,8 @@ namespace Sign.Core
                 timestampHashAlgorithm,
                 timestampUrl,
                 matcher,
-                antiMatcher);
+                antiMatcher,
+                manifestOnly);
 
             try
             {

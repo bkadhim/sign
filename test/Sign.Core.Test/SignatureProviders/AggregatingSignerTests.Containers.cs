@@ -79,7 +79,8 @@ namespace Sign.Core.Test
                 HashAlgorithmName.SHA256,
                 new Uri("https://timestamp.test"),
                 matcher,
-                antiMatcher);
+                antiMatcher,
+                manifestOnly: false);
 
             AggregatingSignerTest test = new(
                 $"{AppxBundleContainerName}/a.dll",
@@ -219,7 +220,8 @@ namespace Sign.Core.Test
                 HashAlgorithmName.SHA256,
                 new Uri("https://timestamp.test"),
                 matcher,
-                antiMatcher);
+                antiMatcher,
+                manifestOnly: false);
 
             AggregatingSignerTest test = new(
                 $"{AppxContainerName}/a.dll",
@@ -361,7 +363,8 @@ namespace Sign.Core.Test
                 HashAlgorithmName.SHA256,
                 new Uri("https://timestamp.test"),
                 matcher,
-                antiMatcher);
+                antiMatcher,
+                manifestOnly: false);
 
             AggregatingSignerTest test = new(
                 $"{ZipContainerName}/a.dll",

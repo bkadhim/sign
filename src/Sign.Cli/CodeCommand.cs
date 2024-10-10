@@ -30,6 +30,7 @@ namespace Sign.Cli
         internal Option<string?> PublisherNameOption { get; } = new(["--publisher-name", "-pn"], Resources.PublisherNameOptionDescription);
         internal Option<HashAlgorithmName> TimestampDigestOption { get; } = new(["--timestamp-digest", "-td"], HashAlgorithmParser.ParseHashAlgorithmName, description: Resources.TimestampDigestOptionDescription);
         internal Option<Uri?> TimestampUrlOption { get; } = new(["--timestamp-url", "-t"], ParseUrl, description: Resources.TimestampUrlOptionDescription);
+        internal Option<bool> ManifestOnlyOption { get; } = new(["--manifest-only", "-mo"], Resources.ManifestOnlyOptionDescription);
         internal Option<LogLevel> VerbosityOption { get; } = new(["--verbosity", "-v"], () => LogLevel.Warning, Resources.VerbosityOptionDescription);
 
         internal CodeCommand()
@@ -55,6 +56,7 @@ namespace Sign.Cli
             AddGlobalOption(TimestampUrlOption);
             AddGlobalOption(TimestampDigestOption);
             AddGlobalOption(MaxConcurrencyOption);
+            AddGlobalOption(ManifestOnlyOption);
             AddGlobalOption(VerbosityOption);
         }
 
@@ -74,6 +76,7 @@ namespace Sign.Cli
             LogLevel verbosity = context.ParseResult.GetValueForOption(VerbosityOption);
             string? output = context.ParseResult.GetValueForOption(OutputOption);
             int maxConcurrency = context.ParseResult.GetValueForOption(MaxConcurrencyOption);
+            bool manifestOnly = context.ParseResult.GetValueForOption(ManifestOnlyOption);
 
             // Make sure this is rooted
             if (!Path.IsPathRooted(baseDirectory.FullName))
@@ -170,6 +173,13 @@ namespace Sign.Cli
                 return;
             }
 
+            if (manifestOnly && inputFiles.Count > 1)
+            {
+                context.Console.Error.WriteLine(Resources.ManifestOnlyMultipleFiles);
+                context.ExitCode = ExitCode.InvalidOptions;
+                return;
+            }
+
             ISigner signer = serviceProvider.GetRequiredService<ISigner>();
 
             context.ExitCode = await signer.SignAsync(
@@ -184,7 +194,8 @@ namespace Sign.Cli
                 timestampUrl,
                 maxConcurrency,
                 fileHashAlgorithmName,
-                timestampHashAlgorithmName);
+                timestampHashAlgorithmName,
+                manifestOnly);
         }
 
         private static string ExpandFilePath(DirectoryInfo baseDirectory, string file)

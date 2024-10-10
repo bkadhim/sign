@@ -55,7 +55,7 @@ namespace Sign.Core
 
             return file.Extension.ToLowerInvariant() switch
             {
-                ".vsto" or ".application" => true,
+                ".vsto" or ".application" or ".manifest" => true,
                 _ => false
             };
         }
@@ -78,6 +78,18 @@ namespace Sign.Core
             using (X509Certificate2 certificate = await _certificateProvider.GetCertificateAsync())
             using (RSA rsaPrivateKey = await _signatureAlgorithmProvider.GetRsaAsync())
             {
+                if (options.ManifestOnly)
+                {
+                    var file = files.Single();   // Caller will have verified that there is only one file
+                    if (!await SignAsync(args, file, rsaPrivateKey, certificate, options))
+                    {
+                        string message = string.Format(CultureInfo.CurrentCulture, Resources.SigningFailed, file.FullName);
+
+                        throw new Exception(message);
+                    }
+                    return;
+                }
+
                 // This outer loop is for a deployment manifest file (.application/.vsto).
                 await Parallel.ForEachAsync(files, _parallelOptions, async (file, state) =>
                 {
@@ -212,7 +224,7 @@ namespace Sign.Core
 
         protected override async Task<bool> SignCoreAsync(string? args, FileInfo file, RSA rsaPrivateKey, X509Certificate2 certificate, SignOptions options)
         {
-            int exitCode = await _mageCli.RunAsync(args);
+            int exitCode = options.ManifestOnly ? 0 : await _mageCli.RunAsync(args);
 
             if (exitCode == 0)
             {

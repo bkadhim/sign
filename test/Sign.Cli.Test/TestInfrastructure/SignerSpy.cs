@@ -40,7 +40,8 @@ namespace Sign.Cli.Test
             Uri timestampUrl,
             int maxConcurrency,
             HashAlgorithmName fileHashAlgorithm,
-            HashAlgorithmName timestampHashAlgorithm)
+            HashAlgorithmName timestampHashAlgorithm,
+            bool manifestOnly)
         {
             InputFiles = inputFiles;
             OutputFile = outputFile;

@@ -112,6 +112,16 @@
         <target state="translated">사용자가 할당한 ManagedIdentity의 리소스 ID입니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ManifestOnlyMultipleFiles">
+        <source>When specifying --manifest-only, a single input manifest file is expected</source>
+        <target state="new">When specifying --manifest-only, a single input manifest file is expected</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ManifestOnlyOptionDescription">
+        <source>Sign just a single ClickOnce manifest file</source>
+        <target state="new">Sign just a single ClickOnce manifest file</target>
+        <note />
+      </trans-unit>
       <trans-unit id="MaxConcurrencyOptionDescription">
         <source>Maximum concurrency.</source>
         <target state="translated">최대 동시성입니다.</target>

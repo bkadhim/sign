@@ -234,4 +234,10 @@
     <value>Warning:  The Microsoft Visual C++ 14 runtime is required but was not detected on your system.  Download and install from https://aka.ms/vs/17/release/vc_redist.x64.exe</value>
     <comment>{Locked="https://aka.ms/vs/17/release/vc_redist.x64.exe"} is a URL.</comment>
   </data>
+  <data name="ManifestOnlyOptionDescription" xml:space="preserve">
+    <value>Sign just a single ClickOnce manifest file</value>
+  </data>
+  <data name="ManifestOnlyMultipleFiles" xml:space="preserve">
+    <value>When specifying --manifest-only, a single input manifest file is expected</value>
+  </data>
 </root>

@@ -18,6 +18,7 @@ namespace Sign.Core
         internal HashAlgorithmName FileHashAlgorithm { get; } = HashAlgorithmName.SHA256;
         internal HashAlgorithmName TimestampHashAlgorithm { get; } = HashAlgorithmName.SHA256;
         internal Uri TimestampService { get; }
+        internal bool ManifestOnly { get; }
 
         internal SignOptions(
             string? applicationName,
@@ -28,7 +29,8 @@ namespace Sign.Core
             HashAlgorithmName timestampHashAlgorithm,
             Uri timestampService,
             Matcher? matcher,
-            Matcher? antiMatcher)
+            Matcher? antiMatcher,
+            bool manifestOnly)
         {
             ApplicationName = applicationName;
             PublisherName = publisherName;
@@ -39,12 +41,13 @@ namespace Sign.Core
             TimestampService = timestampService;
             Matcher = matcher;
             AntiMatcher = antiMatcher;
+            ManifestOnly = manifestOnly;
         }
 
         internal SignOptions(HashAlgorithmName fileHashAlgorithm, Uri timestampService)
             : this(applicationName: null, publisherName: null, description: null, descriptionUrl: null, 
                   fileHashAlgorithm, HashAlgorithmName.SHA256, timestampService, matcher: null,
-                  antiMatcher: null)
+                  antiMatcher: null, manifestOnly: false)
         {
         }
     }
