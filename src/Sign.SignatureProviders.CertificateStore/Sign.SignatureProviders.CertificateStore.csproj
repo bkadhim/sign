@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="sign" />
+    <InternalsVisibleTo Include="ReportsNowSign" />
     <InternalsVisibleTo Include="Sign.SignatureProviders.CertificateStore.Test" />
   </ItemGroup>
 

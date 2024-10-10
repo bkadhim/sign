@@ -2,7 +2,7 @@
   <Import Project="$(RepositoryRootDirectory)\SdkTools.props" />
 
   <PropertyGroup>
-    <AssemblyName>sign</AssemblyName>
+    <AssemblyName>ReportsNowSign</AssemblyName>
     <IsPackable>true</IsPackable>
     <IsShipping>true</IsShipping>
     <OutputType>Exe</OutputType>
