@@ -270,6 +270,8 @@ namespace Sign.Core
 
         public void CopySigningDependencies(FileInfo deploymentManifestFile, DirectoryInfo destination, SignOptions signOptions)
         {
+            if (signOptions.ManifestOnly) return;
+
             // copy _all_ files, ignoring matching options, because we need them to be available to generate
             // valid manifests.
             foreach (FileInfo file in GetFiles(deploymentManifestFile.Directory!))
