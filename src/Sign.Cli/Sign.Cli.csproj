@@ -12,7 +12,7 @@
     <RollForward>Major</RollForward>
     <RootNamespace>Sign.Cli</RootNamespace>
     <SelfContained>false</SelfContained>
-    <ToolCommandName>sign</ToolCommandName>
+    <ToolCommandName>ReportsNowSign</ToolCommandName>
   </PropertyGroup>
 
   <ItemGroup>
