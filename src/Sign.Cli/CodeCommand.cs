@@ -29,7 +29,7 @@ namespace Sign.Cli
         internal Option<string?> PublisherNameOption { get; }
         internal Option<HashAlgorithmName> TimestampDigestOption { get; }
         internal Option<Uri?> TimestampUrlOption { get; }
-        internal Option<bool> ManifestOnlyOption { get; } = new(["--manifest-only", "-mo"], Resources.ManifestOnlyOptionDescription);
+        internal Option<bool> ManifestOnlyOption { get; }
         internal Option<LogLevel> VerbosityOption { get; }
 
         internal CodeCommand()
