@@ -147,7 +147,7 @@ namespace Sign.Core
                     {
                         string message = string.Format(CultureInfo.CurrentCulture, Resources.SigningFailed, manifestFile.FullName);
 
-                        throw new Exception(message);
+                        throw new SigningException(message);
                     }
 
                     string publisherParam = string.Empty;
@@ -155,7 +155,7 @@ namespace Sign.Core
                     if (string.IsNullOrEmpty(options.PublisherName))
                     {
                         string publisherName = certificate.SubjectName.Name;
- 
+
                         // get the DN. it may be quoted
                         publisherParam = $@"-pub ""{publisherName.Replace("\"", "")}""";
                     }
@@ -190,7 +190,7 @@ namespace Sign.Core
                         {
                             string message = string.Format(CultureInfo.CurrentCulture, Resources.SigningFailed, deploymentManifestFile.FullName);
 
-                            throw new Exception(message);
+                            throw new SigningException(message);
                         }
                     }
 

@@ -37,6 +37,11 @@
         <target state="translated">Подписывание двоичных файлов и контейнеров.</target>
         <note />
       </trans-unit>
+      <trans-unit id="CredentialTypeOptionDescription">
+        <source>Azure credential type that will be used. This defaults to DefaultAzureCredential.</source>
+        <target state="translated">Тип учетных данных Azure, который будет использоваться. По умолчанию: DefaultAzureCredential.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="DescriptionOptionDescription">
         <source>Description of the signing certificate.</source>
         <target state="translated">Описание сертификата для подписи</target>
@@ -134,7 +139,7 @@
       </trans-unit>
       <trans-unit id="MsvcrtNotDetected">
         <source>Warning:  The Microsoft Visual C++ 14 runtime is required but was not detected on your system.  Download and install from https://aka.ms/vs/17/release/vc_redist.x64.exe</source>
-        <target state="new">Warning:  The Microsoft Visual C++ 14 runtime is required but was not detected on your system.  Download and install from https://aka.ms/vs/17/release/vc_redist.x64.exe</target>
+        <target state="translated">Внимание! Среда выполнения Microsoft Visual C++ 14 является обязательной, но не обнаружена в вашей системе.  Скачайте и установите ее: https://aka.ms/vs/17/release/vc_redist.x64.exe</target>
         <note>{Locked="https://aka.ms/vs/17/release/vc_redist.x64.exe"} is a URL.</note>
       </trans-unit>
       <trans-unit id="NoFilesToSign">

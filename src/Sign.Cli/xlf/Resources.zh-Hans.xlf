@@ -37,6 +37,11 @@
         <target state="translated">对二进制文件和容器进行签名。</target>
         <note />
       </trans-unit>
+      <trans-unit id="CredentialTypeOptionDescription">
+        <source>Azure credential type that will be used. This defaults to DefaultAzureCredential.</source>
+        <target state="translated">将使用的 Azure 凭据类型。此项默认为 DefaultAzureCredential。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="DescriptionOptionDescription">
         <source>Description of the signing certificate.</source>
         <target state="translated">签名证书的说明。</target>
@@ -134,7 +139,7 @@
       </trans-unit>
       <trans-unit id="MsvcrtNotDetected">
         <source>Warning:  The Microsoft Visual C++ 14 runtime is required but was not detected on your system.  Download and install from https://aka.ms/vs/17/release/vc_redist.x64.exe</source>
-        <target state="new">Warning:  The Microsoft Visual C++ 14 runtime is required but was not detected on your system.  Download and install from https://aka.ms/vs/17/release/vc_redist.x64.exe</target>
+        <target state="translated">警告: Microsoft Visual C++ 14 运行时是必需项，但在系统上未检测到。从 https://aka.ms/vs/17/release/vc_redist.x64.exe 下载并安装</target>
         <note>{Locked="https://aka.ms/vs/17/release/vc_redist.x64.exe"} is a URL.</note>
       </trans-unit>
       <trans-unit id="NoFilesToSign">

@@ -36,13 +36,16 @@
       <ScriptFilePath Condition=" '$(ScriptFilePath)' == '' ">$(RepositoryRootDirectory)\scripts\VerifyNuGetPackage.ps1</ScriptFilePath>
     </PropertyGroup>
 
-    <Exec Command="$(PowerShellFilePath) -NonInteractive -ExecutionPolicy Unrestricted -Command &quot;&amp; { &amp;'$(ScriptFilePath)' '$(ArtifactsShippingPackagesDir)' } &quot;" LogStandardErrorAsError="true" />
+    <Exec Command="$(PowerShellFilePath) -NonInteractive -NoProfile -ExecutionPolicy Unrestricted -Command &quot;&amp; { &amp;'$(ScriptFilePath)' '$(ArtifactsShippingPackagesDir)' } &quot;" LogStandardErrorAsError="true" />
   </Target>
 
   <ItemGroup>
     <Content Include="$(RepositoryRootDirectory)\LICENSE.txt">
       <Pack>true</Pack>
       <PackagePath>\</PackagePath>
+    </Content>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="PACKAGE.md">
       <Pack>true</Pack>

@@ -4,7 +4,6 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
-using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
@@ -24,7 +23,9 @@ namespace Sign.Core.Test
     public sealed class SignerTests : IDisposable
     {
         private readonly CertificatesFixture _certificatesFixture;
+        private readonly DirectoryService _directoryService;
         private readonly KeyVaultServiceStub _keyVaultServiceStub;
+        private readonly TemporaryDirectory _temporaryDirectory;
 
         public SignerTests(CertificatesFixture certificatesFixture)
         {
@@ -32,13 +33,15 @@ namespace Sign.Core.Test
 
             _certificatesFixture = certificatesFixture;
             _keyVaultServiceStub = new KeyVaultServiceStub();
-
-            RegisterSipsFromIniFile(); // Register SIPS from INI file to avoid relying SIPs being registered prior to running tests.
+            _directoryService = new DirectoryService(Mock.Of<ILogger<IDirectoryService>>());
+            _temporaryDirectory = new TemporaryDirectory(_directoryService);
         }
 
         public void Dispose()
         {
             _keyVaultServiceStub.Dispose();
+            _temporaryDirectory.Dispose();
+            _directoryService.Dispose();
         }
 
         [Fact]
@@ -62,178 +65,154 @@ namespace Sign.Core.Test
         [Fact]
         public async Task SignAsync_WhenFileIsPortableExecutable_Signs()
         {
-            using (TemporaryDirectory temporaryDirectory = new(new DirectoryService(Mock.Of<ILogger<IDirectoryService>>())))
-            {
-                FileInfo thisAssemblyFile = new(typeof(SignerTests).Assembly.Location);
-                FileInfo file = new(Path.Combine(temporaryDirectory.Directory.FullName, thisAssemblyFile.Name));
+            FileInfo thisAssemblyFile = new(typeof(SignerTests).Assembly.Location);
+            FileInfo file = new(Path.Combine(_temporaryDirectory.Directory.FullName, thisAssemblyFile.Name));
 
-                File.Copy(thisAssemblyFile.FullName, file.FullName);
+            File.Copy(thisAssemblyFile.FullName, file.FullName);
 
-                FileInfo outputFile = new(Path.Combine(temporaryDirectory.Directory.FullName, "signed.dll"));
+            FileInfo outputFile = new(Path.Combine(_temporaryDirectory.Directory.FullName, "signed.dll"));
 
-                await SignAsync(temporaryDirectory, file, outputFile);
+            await SignAsync(_temporaryDirectory, file, outputFile);
 
-                await VerifyAuthenticodeSignedFileAsync(outputFile);
-            }
+            await VerifyAuthenticodeSignedFileAsync(outputFile);
         }
 
         [Fact]
         public async Task SignAsync_WhenFileIsPowerShellScript_Signs()
         {
-            using (TemporaryDirectory temporaryDirectory = new(new DirectoryService(Mock.Of<ILogger<IDirectoryService>>())))
-            {
-                FileInfo file = new(Path.Combine(temporaryDirectory.Directory.FullName, "script.ps1"));
+            FileInfo file = new(Path.Combine(_temporaryDirectory.Directory.FullName, "script.ps1"));
 
-                File.WriteAllText(file.FullName, "Write-Host 'Hello, World!'");
+            File.WriteAllText(file.FullName, "Write-Host 'Hello, World!'");
 
-                FileInfo outputFile = new(Path.Combine(temporaryDirectory.Directory.FullName, "signed.ps1"));
+            FileInfo outputFile = new(Path.Combine(_temporaryDirectory.Directory.FullName, "signed.ps1"));
 
-                await SignAsync(temporaryDirectory, file, outputFile);
+            await SignAsync(_temporaryDirectory, file, outputFile);
 
-                SignedCms signedCms = GetSignedCmsFromPowerShellScript(outputFile);
+            SignedCms signedCms = GetSignedCmsFromPowerShellScript(outputFile);
 
-                await VerifySignedCmsAsync(signedCms);
-            }
+            await VerifySignedCmsAsync(signedCms);
         }
 
         [Fact]
         public async Task SignAsync_WhenFileIsVsix_Signs()
         {
-            using (TemporaryDirectory temporaryDirectory = new(new DirectoryService(Mock.Of<ILogger<IDirectoryService>>())))
-            {
-                FileInfo file = GetTestAsset(temporaryDirectory, "VsixPackage.vsix");
-                FileInfo outputFile = new(Path.Combine(temporaryDirectory.Directory.FullName, "signed.vsix"));
+            FileInfo file = TestAssets.GetTestAsset(_temporaryDirectory.Directory, "VsixPackage.vsix");
+            FileInfo outputFile = new(Path.Combine(_temporaryDirectory.Directory.FullName, "signed.vsix"));
 
-                await SignAsync(temporaryDirectory, file, outputFile);
+            await SignAsync(_temporaryDirectory, file, outputFile);
 
-                await VerifyVsixAsync(outputFile, temporaryDirectory);
-            }
+            await VerifyVsixAsync(outputFile, _temporaryDirectory);
         }
 
         [Fact]
         public async Task SignAsync_WhenFileIsMsixBundle_Signs()
         {
-            using (TemporaryDirectory temporaryDirectory = new(new DirectoryService(Mock.Of<ILogger<IDirectoryService>>())))
-            {
-                FileInfo file = GetTestAsset(temporaryDirectory, "App1_1.0.0.0_x64.msixbundle");
-                FileInfo outputFile = new(Path.Combine(temporaryDirectory.Directory.FullName, "signed.msixbundle"));
+            FileInfo file = TestAssets.GetTestAsset(_temporaryDirectory.Directory, "App1_1.0.0.0_x64.msixbundle");
+            FileInfo outputFile = new(Path.Combine(_temporaryDirectory.Directory.FullName, "signed.msixbundle"));
 
-                await SignAsync(temporaryDirectory, file, outputFile);
+            await SignAsync(_temporaryDirectory, file, outputFile);
 
-                await VerifyMsixBundleFileAsync(outputFile, temporaryDirectory);
-            }
+            await VerifyMsixBundleFileAsync(outputFile, _temporaryDirectory);
         }
 
         [Fact]
         public async Task SignAsync_WhenFileIsApp_Signs()
         {
-            using (TemporaryDirectory temporaryDirectory = new(new DirectoryService(Mock.Of<ILogger<IDirectoryService>>())))
-            {
-                FileInfo file = GetTestAsset(temporaryDirectory, "EmptyExtension.app");
-                FileInfo outputFile = new(Path.Combine(temporaryDirectory.Directory.FullName, "signed.app"));
+            FileInfo file = TestAssets.GetTestAsset(_temporaryDirectory.Directory, "EmptyExtension.app");
+            FileInfo outputFile = new(Path.Combine(_temporaryDirectory.Directory.FullName, "signed.app"));
 
-                await SignAsync(temporaryDirectory, file, outputFile);
+            await SignAsync(_temporaryDirectory, file, outputFile);
 
-                await VerifyAppSignatureAsync(file, outputFile, temporaryDirectory);
-            }
+            await VerifyAppSignatureAsync(file, outputFile, _temporaryDirectory);
         }
 
         [Fact]
         public async Task SignAsync_WhenSigningSingleFile_WithOutputDirectoryName_Signs_ToOutputDirectory()
         {
-            using (TemporaryDirectory temporaryDirectory = new(new DirectoryService(Mock.Of<ILogger<IDirectoryService>>())))
+            FileInfo thisAssemblyFile = new(typeof(SignerTests).Assembly.Location);
+
+            FileInfo file1 = new(Path.Combine(_temporaryDirectory.Directory.FullName, thisAssemblyFile.Name));
+            var files = new[] { file1 };
+
+            foreach (var file in files)
             {
-                FileInfo thisAssemblyFile = new(typeof(SignerTests).Assembly.Location);
+                File.Copy(thisAssemblyFile.FullName, file.FullName);
+            }
 
-                FileInfo file1 = new(Path.Combine(temporaryDirectory.Directory.FullName, thisAssemblyFile.Name));
-                var files = new[] { file1 };
+            var outputDirectory = Path.Combine(_temporaryDirectory.Directory.FullName, "signedFileNameWithoutExtensionIsTreatedAsDirectory");
 
-                foreach (var file in files)
-                {
-                    File.Copy(thisAssemblyFile.FullName, file.FullName);
-                }
+            await SignAsync(_temporaryDirectory, files, outputDirectory);
 
-                var outputDirectory = Path.Combine(temporaryDirectory.Directory.FullName, "signedFileNameWithoutExtensionIsTreatedAsDirectory");
-
-                await SignAsync(temporaryDirectory, files, outputDirectory);
-
-                var outputFiles = new FileInfo[]
-                {
+            var outputFiles = new FileInfo[]
+            {
                   new(Path.Combine(outputDirectory, file1.Name))
-                };
+            };
 
-                foreach (var outputFile in outputFiles)
-                {
-                    Assert.True(File.Exists(outputFile.FullName));
-                    await VerifyAuthenticodeSignedFileAsync(outputFile);
-                }
+            foreach (var outputFile in outputFiles)
+            {
+                Assert.True(File.Exists(outputFile.FullName));
+                await VerifyAuthenticodeSignedFileAsync(outputFile);
             }
         }
 
         [Fact]
         public async Task SignAsync_WhenSigningMultipleFiles_WithOutputDirectoryName_Signs_ToOutputDirectory()
         {
-            using (TemporaryDirectory temporaryDirectory = new(new DirectoryService(Mock.Of<ILogger<IDirectoryService>>())))
+            FileInfo thisAssemblyFile = new(typeof(SignerTests).Assembly.Location);
+
+            FileInfo file1 = new(Path.Combine(_temporaryDirectory.Directory.FullName, thisAssemblyFile.Name));
+            FileInfo file2 = new(Path.Combine(_temporaryDirectory.Directory.FullName, Path.ChangeExtension(thisAssemblyFile.Name, ".Copy.dll")));
+            var files = new[] { file1, file2 };
+
+            foreach (var file in files)
             {
-                FileInfo thisAssemblyFile = new(typeof(SignerTests).Assembly.Location);
+                File.Copy(thisAssemblyFile.FullName, file.FullName);
+            }
 
-                FileInfo file1 = new(Path.Combine(temporaryDirectory.Directory.FullName, thisAssemblyFile.Name));
-                FileInfo file2 = new(Path.Combine(temporaryDirectory.Directory.FullName, Path.ChangeExtension(thisAssemblyFile.Name, ".Copy.dll")));
-                var files = new[] { file1, file2 };
+            var outputDirectory = Path.Combine(_temporaryDirectory.Directory.FullName, "signedFiles.Directory.WithExtension.dll");
 
-                foreach (var file in files)
-                {
-                    File.Copy(thisAssemblyFile.FullName, file.FullName);
-                }
+            await SignAsync(_temporaryDirectory, files, outputDirectory);
 
-                var outputDirectory = Path.Combine(temporaryDirectory.Directory.FullName, "signedFiles.Directory.WithExtension.dll");
-
-                await SignAsync(temporaryDirectory, files, outputDirectory);
-
-                var outputFiles = new FileInfo[]
-                {
+            var outputFiles = new FileInfo[]
+            {
                   new(Path.Combine(outputDirectory, file1.Name)),
                   new(Path.Combine(outputDirectory, file2.Name))
-                };
+            };
 
-                foreach (var outputFile in outputFiles)
-                {
-                    Assert.True(File.Exists(outputFile.FullName));
-                    await VerifyAuthenticodeSignedFileAsync(outputFile);
-                }
+            foreach (var outputFile in outputFiles)
+            {
+                Assert.True(File.Exists(outputFile.FullName));
+                await VerifyAuthenticodeSignedFileAsync(outputFile);
             }
         }
 
         [Fact]
         public async Task SignAsync_WhenSigningMultipleFiles_WithoutOutputDirectoryName_Signs_Inplace()
         {
-            using (TemporaryDirectory temporaryDirectory = new(new DirectoryService(Mock.Of<ILogger<IDirectoryService>>())))
+            FileInfo thisAssemblyFile = new(typeof(SignerTests).Assembly.Location);
+
+            FileInfo file1 = new(Path.Combine(_temporaryDirectory.Directory.FullName, thisAssemblyFile.Name));
+            FileInfo file2 = new(Path.Combine(_temporaryDirectory.Directory.FullName, Path.ChangeExtension(thisAssemblyFile.Name, ".Copy.dll")));
+            var files = new[] { file1, file2 };
+
+            foreach (var file in files)
             {
-                FileInfo thisAssemblyFile = new(typeof(SignerTests).Assembly.Location);
+                File.Copy(thisAssemblyFile.FullName, file.FullName);
+            }
 
-                FileInfo file1 = new(Path.Combine(temporaryDirectory.Directory.FullName, thisAssemblyFile.Name));
-                FileInfo file2 = new(Path.Combine(temporaryDirectory.Directory.FullName, Path.ChangeExtension(thisAssemblyFile.Name, ".Copy.dll")));
-                var files = new[] { file1, file2 };
+            var emptyOutputDirectoryParameter = string.Empty;
 
-                foreach (var file in files)
-                {
-                    File.Copy(thisAssemblyFile.FullName, file.FullName);
-                }
+            await SignAsync(_temporaryDirectory, files, emptyOutputDirectoryParameter);
 
-                var emptyOutputDirectoryParameter = string.Empty;
-
-                await SignAsync(temporaryDirectory, files, emptyOutputDirectoryParameter);
-
-                var outputFiles = new FileInfo[]
-                {
+            var outputFiles = new FileInfo[]
+            {
                   file1,
                   file2
-                };
+            };
 
-                foreach (var outputFile in outputFiles)
-                {
-                    await VerifyAuthenticodeSignedFileAsync(outputFile);
-                }
+            foreach (var outputFile in outputFiles)
+            {
+                await VerifyAuthenticodeSignedFileAsync(outputFile);
             }
         }
 
@@ -252,6 +231,7 @@ namespace Sign.Core.Test
                 files,
                 outputFile: outputFile,
                 fileList: null,
+                recurseContainers: true,
                 temporaryDirectory.Directory,
                 applicationName: "a",
                 publisherName: null,
@@ -269,17 +249,6 @@ namespace Sign.Core.Test
 
             Assert.Equal(LogLevel.Information, lastLogEntry.LogLevel);
             Assert.Matches(@"^Completed in \d+ ms.$", lastLogEntry.Message);
-        }
-
-        private static FileInfo GetTestAsset(TemporaryDirectory temporaryDirectory, string fileName)
-        {
-            FileInfo thisAssemblyFile = new(Path.Combine(Assembly.GetExecutingAssembly().Location));
-            FileInfo testAssetFile = new(Path.Combine(thisAssemblyFile.DirectoryName!, "TestAssets", fileName));
-            FileInfo testAssetFileCopy = new(Path.Combine(temporaryDirectory.Directory.FullName, fileName));
-
-            File.Copy(testAssetFile.FullName, testAssetFileCopy.FullName);
-
-            return testAssetFileCopy;
         }
 
         private async Task VerifyAuthenticodeSignedFileAsync(FileInfo outputFile)
@@ -613,16 +582,6 @@ namespace Sign.Core.Test
             services.AddSingleton<ISigner, Signer>();
 
             return new ServiceProvider(services.BuildServiceProvider());
-        }
-
-        private static void RegisterSipsFromIniFile()
-        {
-            AppRootDirectoryLocator locator = new();
-            DirectoryInfo appRootDirectory = locator.Directory;
-            string baseDirectory = Path.Combine(appRootDirectory.FullName, "tools", "SDK", "x64");
-            Kernel32.SetDllDirectoryW(baseDirectory);
-            Kernel32.LoadLibraryW($@"{baseDirectory}\wintrust.dll");
-            Kernel32.LoadLibraryW($@"{baseDirectory}\mssign32.dll");
         }
     }
 }

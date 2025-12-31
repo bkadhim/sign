@@ -37,6 +37,11 @@
         <target state="translated">Podpisz pliki binarne i kontenery.</target>
         <note />
       </trans-unit>
+      <trans-unit id="CredentialTypeOptionDescription">
+        <source>Azure credential type that will be used. This defaults to DefaultAzureCredential.</source>
+        <target state="translated">Typ poświadczeń platformy Azure, który będzie używany. Wartość domyślna to DefaultAzureCredential.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="DescriptionOptionDescription">
         <source>Description of the signing certificate.</source>
         <target state="translated">Opis certyfikatu podpisywania.</target>
@@ -134,7 +139,7 @@
       </trans-unit>
       <trans-unit id="MsvcrtNotDetected">
         <source>Warning:  The Microsoft Visual C++ 14 runtime is required but was not detected on your system.  Download and install from https://aka.ms/vs/17/release/vc_redist.x64.exe</source>
-        <target state="new">Warning:  The Microsoft Visual C++ 14 runtime is required but was not detected on your system.  Download and install from https://aka.ms/vs/17/release/vc_redist.x64.exe</target>
+        <target state="translated">Ostrzeżenie: środowisko uruchomieniowe Microsoft Visual C++ 14 jest wymagane, ale nie zostało wykryte w systemie.  Pobierz i zainstaluj z witryny https://aka.ms/vs/17/release/vc_redist.x64.exe</target>
         <note>{Locked="https://aka.ms/vs/17/release/vc_redist.x64.exe"} is a URL.</note>
       </trans-unit>
       <trans-unit id="NoFilesToSign">

@@ -8,6 +8,8 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Sign.Core.Test
 {
@@ -17,9 +19,10 @@ namespace Sign.Core.Test
         private const string RequestContentType = "application/timestamp-query";
         private const string ResponseContentType = "application/timestamp-response";
 
-        private readonly HashSet<BigInteger> _serialNumbers;
         private BigInteger _nextSerialNumber;
         private IDisposable? _disposable;
+        private readonly DirectoryService _directoryService;
+        private readonly TemporaryDirectory _temporaryDirectory;
 
         /// <summary>
         /// Gets this certificate authority's certificate.
@@ -36,6 +39,11 @@ namespace Sign.Core.Test
         /// </summary>
         internal CertificateAuthority CertificateAuthority { get; }
 
+        internal DirectoryInfo LogDirectory
+        {
+            get => _temporaryDirectory.Directory;
+        }
+
         private TimestampService(
             CertificateAuthority certificateAuthority,
             X509Certificate2 certificate,
@@ -44,13 +52,16 @@ namespace Sign.Core.Test
             CertificateAuthority = certificateAuthority;
             Certificate = certificate;
             Url = uri;
-            _serialNumbers = new HashSet<BigInteger>();
             _nextSerialNumber = BigInteger.One;
+            _directoryService = new DirectoryService(Mock.Of<ILogger<IDirectoryService>>());
+            _temporaryDirectory = new TemporaryDirectory(_directoryService);
         }
 
         public void Dispose()
         {
             _disposable?.Dispose();
+            _temporaryDirectory.Dispose();
+            _directoryService.Dispose();
         }
 
         internal static TimestampService Create(
@@ -63,6 +74,7 @@ namespace Sign.Core.Test
 
             using (RSA rsa = RSA.Create(keySizeInBits: 3072))
             {
+                // CodeQL [SM03799] PKCS #1 v1.5 is required for interoperability with existing signature verifiers.
                 CertificateRequest request = new("CN=timestamp.test", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 
                 request.CertificateExtensions.Add(
@@ -104,51 +116,110 @@ namespace Sign.Core.Test
             }
         }
 
-        public override Task RespondAsync(HttpContext context)
+        public override async Task RespondAsync(HttpContext context)
         {
-            if (!string.Equals(context.Request.ContentType, RequestContentType, StringComparison.OrdinalIgnoreCase))
+            RequestAndResponse reqAndResp = new();
+
+            try
             {
-                context.Response.StatusCode = 400;
+                reqAndResp.RequestContentType = context.Request.ContentType;
 
-                return Task.CompletedTask;
+                if (!string.Equals(context.Request.ContentType, RequestContentType, StringComparison.OrdinalIgnoreCase))
+                {
+                    context.Response.StatusCode = 400;
+                    reqAndResp.ResponseStatus = 400;
+
+                    return;
+                }
+
+                byte[] bytes = ReadRequestBody(context.Request);
+
+                reqAndResp.RequestBody = Convert.ToBase64String(bytes);
+
+                if (!Rfc3161TimestampRequest.TryDecode(bytes, out Rfc3161TimestampRequest? request, out int _))
+                {
+                    context.Response.StatusCode = 400;
+                    reqAndResp.ResponseStatus = 400;
+
+                    return;
+                }
+
+                reqAndResp.Request = request;
+
+                ReadOnlyMemory<byte> response;
+
+                if (request.HashAlgorithmId.IsEqualTo(Oids.Sha1))
+                {
+                    response = CreateResponse(PkiStatus.Rejection, signedCms: null);
+                }
+                else
+                {
+                    ReadOnlyMemory<byte> tstInfo = CreateTstInfo(
+                        request.HashAlgorithmId,
+                        request.GetMessageHash(),
+                        _nextSerialNumber,
+                        request.GetNonce());
+
+                    ++_nextSerialNumber;
+
+                    SignedCms timestamp = GenerateTimestamp(request!, tstInfo);
+                    response = CreateResponse(PkiStatus.Granted, timestamp);
+                }
+
+                context.Response.ContentType = ResponseContentType;
+                context.Response.StatusCode = 200;
+
+                reqAndResp.ResponseStatus = 200;
+                reqAndResp.ResponseBody = Convert.ToBase64String(response.Span);
+
+                WriteResponseBody(context.Response, response);
             }
-
-            byte[] bytes = ReadRequestBody(context.Request);
-            if (!Rfc3161TimestampRequest.TryDecode(bytes, out Rfc3161TimestampRequest? request, out int _))
+            catch (Exception ex)
             {
-                context.Response.StatusCode = 400;
-
-                return Task.CompletedTask;
+                reqAndResp.Exception = ex;
             }
-
-            ReadOnlyMemory<byte> response;
-
-            if (request.HashAlgorithmId.IsEqualTo(Oids.Sha1))
+            finally
             {
-                response = CreateResponse(PkiStatus.Rejection, signedCms: null);
+                await WriteAsync(reqAndResp);
             }
-            else
+        }
+
+        private async Task WriteAsync(RequestAndResponse reqAndResp)
+        {
+            string filePath = Path.Combine(
+                _temporaryDirectory.Directory.FullName,
+                $"TimestampServer_{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss.fffffffZ}_{Guid.NewGuid():N}.txt");
+            FileInfo file = new(filePath);
+
+            await using (FileStream stream = file.OpenWrite())
+            await using (StreamWriter writer = new(stream))
             {
-                ReadOnlyMemory<byte> tstInfo = CreateTstInfo(
-                    request.HashAlgorithmId,
-                    request.GetMessageHash(),
-                    _nextSerialNumber,
-                    request.GetNonce());
+                await writer.WriteAsync($"Request Content-Type:  ");
+                await writer.WriteLineAsync(reqAndResp.RequestContentType);
+                await writer.WriteAsync($"Request body:  ");
+                await writer.WriteLineAsync(reqAndResp.RequestBody);
 
-                _serialNumbers.Add(_nextSerialNumber);
+                if (reqAndResp.Request is not null)
+                {
+                    await writer.WriteAsync($"Request version:  ");
+                    await writer.WriteLineAsync(reqAndResp.Request.Version.ToString());
+                    await writer.WriteAsync($"Request hash algorithm OID:  ");
+                    await writer.WriteLineAsync(reqAndResp.Request.HashAlgorithmId.Value);
+                    await writer.WriteAsync($"Request requested policy OID:  ");
+                    await writer.WriteLineAsync(reqAndResp.Request.RequestedPolicyId?.Value);
+                    await writer.WriteAsync($"Request request signer certificate:  ");
+                    await writer.WriteLineAsync(reqAndResp.Request.RequestSignerCertificate.ToString());
+                    await writer.WriteAsync($"Request has extensions:  ");
+                    await writer.WriteLineAsync(reqAndResp.Request.HasExtensions.ToString());
+                }
 
-                ++_nextSerialNumber;
-
-                SignedCms timestamp = GenerateTimestamp(request!, tstInfo);
-                response = CreateResponse(PkiStatus.Granted, timestamp);
+                await writer.WriteAsync($"Response status:  ");
+                await writer.WriteLineAsync(reqAndResp.ResponseStatus?.ToString());
+                await writer.WriteAsync($"Response body:  ");
+                await writer.WriteLineAsync(reqAndResp.ResponseBody);
+                await writer.WriteAsync($"Exception:  ");
+                await writer.WriteLineAsync(reqAndResp.Exception?.ToString());
             }
-
-            context.Response.ContentType = ResponseContentType;
-            context.Response.StatusCode = 200;
-
-            WriteResponseBody(context.Response, response);
-
-            return Task.CompletedTask;
         }
 
         private SignedCms GenerateTimestamp(Rfc3161TimestampRequest request, ReadOnlyMemory<byte> tstInfo)
@@ -254,6 +325,16 @@ namespace Sign.Core.Test
             unacceptedExtension = 16,
             addInfoNotAvailable = 17,
             systemFailure = 25
+        }
+
+        private sealed class RequestAndResponse
+        {
+            internal string? RequestContentType { get; set; }
+            internal string? RequestBody { get; set; }
+            internal Rfc3161TimestampRequest? Request { get; set; }
+            internal Exception? Exception { get; set; }
+            internal int? ResponseStatus { get; set; }
+            internal string? ResponseBody { get; set; }
         }
     }
 }

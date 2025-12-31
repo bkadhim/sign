@@ -37,6 +37,11 @@
         <target state="translated">バイナリとコンテナーに署名します。</target>
         <note />
       </trans-unit>
+      <trans-unit id="CredentialTypeOptionDescription">
+        <source>Azure credential type that will be used. This defaults to DefaultAzureCredential.</source>
+        <target state="translated">使用される Azure 資格情報の種類。この既定値は DefaultAzureCredential です。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="DescriptionOptionDescription">
         <source>Description of the signing certificate.</source>
         <target state="translated">署名証明書の説明。</target>
@@ -134,7 +139,7 @@
       </trans-unit>
       <trans-unit id="MsvcrtNotDetected">
         <source>Warning:  The Microsoft Visual C++ 14 runtime is required but was not detected on your system.  Download and install from https://aka.ms/vs/17/release/vc_redist.x64.exe</source>
-        <target state="new">Warning:  The Microsoft Visual C++ 14 runtime is required but was not detected on your system.  Download and install from https://aka.ms/vs/17/release/vc_redist.x64.exe</target>
+        <target state="translated">警告: Microsoft Visual C++ 14 ランタイムが必要ですが、システムで検出されませんでした。https://aka.ms/vs/17/release/vc_redist.x64.exe からダウンロードしてインストールしてください</target>
         <note>{Locked="https://aka.ms/vs/17/release/vc_redist.x64.exe"} is a URL.</note>
       </trans-unit>
       <trans-unit id="NoFilesToSign">

@@ -17,6 +17,11 @@
         <target state="translated">Password per file certificato.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ContainersDescription">
+        <source>Sign container contents.</source>
+        <target state="translated">Contenuti contenitore firme.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="CspOptionDescription">
         <source>Cryptographic Service Provider containing the private key container. Requires /k and optionally /km.</source>
         <target state="translated">Provider del servizio di crittografia contenente il contenitore di chiavi private. Richiede /k e facoltativamente /km.</target>
@@ -24,7 +29,7 @@
       </trans-unit>
       <trans-unit id="InteractiveDescription">
         <source>Allow user interactions (such as a dialog box) when a private key is accessed.</source>
-        <target state="new">Allow user interactions (such as a dialog box) when a private key is accessed.</target>
+        <target state="translated">Consenti interazioni utente (ad esempio una finestra di dialogo) quando si accede a una chiave privata.</target>
         <note />
       </trans-unit>
       <trans-unit id="KeyContainerOptionDescription">

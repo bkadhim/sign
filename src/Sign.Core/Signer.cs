@@ -31,6 +31,7 @@ namespace Sign.Core
             IReadOnlyList<FileInfo> inputFiles,
             string? outputFile,
             FileInfo? fileList,
+            bool recurseContainers,
             DirectoryInfo baseDirectory,
             string? applicationName,
             string? publisherName,
@@ -72,6 +73,7 @@ namespace Sign.Core
                 timestampUrl,
                 matcher,
                 antiMatcher,
+                recurseContainers,
                 manifestOnly);
 
             try
@@ -167,6 +169,11 @@ namespace Sign.Core
             catch (AuthenticationException e)
             {
                 _logger.LogError(e, e.Message);
+                return ExitCode.Failed;
+            }
+            catch (SigningException)
+            {
+                _logger.LogError(Resources.SigningFailedAfterAllAttempts);
                 return ExitCode.Failed;
             }
             catch (Exception e)
