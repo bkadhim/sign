@@ -226,7 +226,8 @@ namespace Sign.Core.Test
                     new Uri("http://timestamp.test"),
                     matcher: null,
                     antiMatcher: null,
-                    recurseContainers: true);
+                    recurseContainers: true,
+                    manifestOnly: false);
 
                 using (X509Certificate2 certificate = SelfIssuedCertificateCreator.CreateCertificate())
                 using (RSA privateKey = certificate.GetRSAPrivateKey()!)

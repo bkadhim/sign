@@ -254,9 +254,8 @@ namespace Sign.Cli
 
             if (manifestOnly && inputFiles.Count > 1)
             {
-                context.Console.Error.WriteLine(Resources.ManifestOnlyMultipleFiles);
-                context.ExitCode = ExitCode.InvalidOptions;
-                return;
+                Console.Error.WriteLine(Resources.ManifestOnlyMultipleFiles);
+                return ExitCode.InvalidOptions;
             }
 
             ISigner signer = serviceProvider.GetRequiredService<ISigner>();

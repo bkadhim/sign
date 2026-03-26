@@ -140,7 +140,8 @@ namespace Sign.Core.Test
                     timestampService: null!,
                     matcher: null,
                     antiMatcher: null,
-                    recurseContainers: true);
+                    recurseContainers: true,
+                    manifestOnly: false);
 
                 X509Certificate2 certificate = _certificateFixture.TrustedCertificate;
 

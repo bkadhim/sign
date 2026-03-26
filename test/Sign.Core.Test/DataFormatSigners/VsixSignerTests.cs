@@ -118,7 +118,8 @@ namespace Sign.Core.Test
                 new Uri("http://timestamp.test"),
                 matcher: null,
                 antiMatcher: null,
-                recurseContainers: true);
+                recurseContainers: true,
+                manifestOnly: false);
 
             using (DirectoryService directoryService = new(Mock.Of<ILogger<IDirectoryService>>()))
             using (TemporaryDirectory temporaryDirectory = new(directoryService))

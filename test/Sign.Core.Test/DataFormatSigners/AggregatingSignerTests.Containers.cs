@@ -77,7 +77,8 @@ namespace Sign.Core.Test
                 timestampService: new Uri("https://timestamp.test"),
                 matcher: null,
                 antiMatcher: null,
-                recurseContainers: false);
+                recurseContainers: false,
+                manifestOnly: false);
 
             await test.Signer.SignAsync(test.Files, options);
 
