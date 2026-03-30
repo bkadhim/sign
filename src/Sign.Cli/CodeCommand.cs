@@ -110,7 +110,8 @@ namespace Sign.Cli
             ManifestOnlyOption = new Option<bool>("--manifest-only", "-mo")
             {
                 DefaultValueFactory = _ => true,
-                Description = Resources.ManifestOnlyOptionDescription
+                Description = Resources.ManifestOnlyOptionDescription,
+                Recursive = true
             };
             VerbosityOption = new Option<LogLevel>("--verbosity", "-v")
             {
